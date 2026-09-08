@@ -6,6 +6,7 @@ the supervisor spawns the inference children on loopback ports, so this is
 correct for both single-image deployment and bare-metal local runs.
 """
 
+import json
 import logging
 import os
 from typing import Any
@@ -160,6 +161,33 @@ async def my_agent(ctx: JobContext) -> None:
 
     await session.start(agent=Assistant(), room=ctx.room)
     await ctx.connect()
+
+    @ctx.room.on("data_received")
+    def on_data_received(data_packet):
+        try:
+            raw = data_packet.data
+            if isinstance(raw, (bytes, bytearray)):
+                text = raw.decode("utf-8")
+            else:
+                text = str(raw)
+            try:
+                payload = json.loads(text)
+                if isinstance(payload, dict) and "message" in payload:
+                    user_msg = payload["message"]
+                elif isinstance(payload, dict) and "text" in payload:
+                    user_msg = payload["text"]
+                else:
+                    user_msg = text
+            except Exception:
+                user_msg = text
+
+            if user_msg and str(user_msg).strip():
+                logger.info("Received chat message from user: %s", user_msg)
+                session.generate_reply(
+                    instructions=f"The user sent a chat message: '{str(user_msg).strip()}'. Answer their question helpfully and concisely."
+                )
+        except Exception:
+            logger.exception("Error handling incoming chat data")
 
     if wake_word:
         # Join deaf, wait for the wake phrase, then wake up and greet.
