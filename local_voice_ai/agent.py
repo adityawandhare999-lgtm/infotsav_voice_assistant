@@ -173,18 +173,11 @@ async def my_agent(ctx: JobContext) -> None:
             # Fail open: a broken detector shouldn't brick the assistant.
             logger.exception("wake word detection failed; enabling audio input")
         session.input.set_audio_enabled(True)
-        session.generate_reply(
-            instructions=(
-                "You just woke up because the user said the wake phrase. "
-                "Greet them very briefly and ask how you can help."
-            )
-        )
+        session.say("Hello! I am awake. How can I help you with SVPCET Infotsav 2026?")
     else:
-        # Speak first so the user knows the audio path works.
-        session.generate_reply(
-            instructions=(
-                "Greet the user warmly in one short sentence as the SVPCET Infotsav 2026 assistant and invite them to ask about any event or the college."
-            )
+        # Speak first so the user knows the audio path works and prevents connection timeout.
+        session.say(
+            "Hello! Welcome to SVPCET Infotsav 2026. How can I help you today?"
         )
 
 
